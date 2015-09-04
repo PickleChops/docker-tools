@@ -1,4 +1,6 @@
-#Installation for Mac
+#Docker Shell Initialiser
+
+##Installation for Mac
 
 Copy somehere useful:
 
