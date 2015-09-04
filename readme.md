@@ -2,7 +2,7 @@
 
 ##Installation for Mac
 
-Copy somehere useful:
+Copy somewhere useful:
 
 ```cp dsi /usr/local/bin```
 
