@@ -1,0 +1,74 @@
+#! /bin/bash
+
+#Check this script was run with source, otherwise the env changes never make it to the parent shell
+if [[ $0 = "$BASH_SOURCE" ]]; then
+   echo -e "You probably wanted to run with a preceeding . to set your current shell env e.g. '. ${BASH_SOURCE}'\nWithout it this script will not correctly set your env for docker"
+   exit
+fi
+
+#Because we are sourcing this script we need to put OPTIND back to make getopts happy.
+OPTIND=1
+
+#Can we find docker-machine in path
+if ! [[ `which docker-machine` =~ \/docker-machine$ ]]
+then
+    echo 'docker-machine not found - is it installed ?'
+    return -1 #Because we are sourced
+fi
+
+#Is there a flag telling us to allow VM start up
+ALLOW_VM_STARUP=false
+
+while getopts ":s" OPT; do
+  case ${OPT} in
+    s)
+      ALLOW_VM_STARUP=true
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      return -1
+      ;;
+  esac
+done
+
+#Clear option flags
+shift $((OPTIND-1))
+
+#Get env from command line - assume default if blank
+if [[ -z "${1}" ]]
+then
+    ENV='default'
+else
+    ENV="${1}"
+fi
+
+#Check whether docker VM is running and init env
+
+RUNNING_MACHINES=(`docker-machine ls -q --filter="state=Running"`)
+
+
+if ! [[ " ${RUNNING_MACHINES[@]} " =~ " ${ENV} " ]]; then
+
+      if [[ ${ALLOW_VM_STARUP} = true ]]; then
+           echo "It looks like the ${ENV} VM is not running. Attempting to start it..."
+           docker-machine start "${ENV}" >/dev/null
+           if [[ $? -ne 0 ]]; then
+            echo -e "Unable to start docker-machine VM ${ENV}. Does it exist?"
+            return -1 #Because we are sourced
+           fi
+      else
+           echo -e "The docker VM ${ENV} is not running.\nUse '. ${BASH_SOURCE} -s' to allow VM starting from this script\nor run 'docker-machine start ${ENV}'"
+           return -1
+      fi
+fi
+
+#Set the env
+eval $(docker-machine env "${ENV}")
+echo "docker-machine VM ${ENV} env set."
+
+
+
+
+
+
+
